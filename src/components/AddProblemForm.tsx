@@ -21,8 +21,7 @@ interface Props {
 const inputBase =
   "w-full bg-surface-2 border border-border-subtle rounded-lg px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 transition-colors duration-200";
 
-const labelBase =
-  "block text-xs font-medium text-text-secondary mb-1.5";
+const labelBase = "block text-xs font-medium text-text-secondary mb-1.5";
 
 export default function AddProblemForm({ onAdd }: Props) {
   const [form, setForm] = useState<FormState>({

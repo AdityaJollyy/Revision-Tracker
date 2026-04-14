@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import {
   today,
   addDays,
@@ -17,7 +17,6 @@ import ProblemRow from "./ProblemRow";
 import AddProblemForm from "./AddProblemForm";
 import SearchInput from "./SearchInput";
 import EmptyState from "./EmptyState";
-import Toast from "./Toast";
 
 type View = "today" | "upcoming" | "all" | "add";
 
@@ -117,19 +116,6 @@ export default function Dashboard({ initialProblems }: Props) {
   const [problems, setProblems] = useState<IProblem[]>(initialProblems);
   const [view, setView] = useState<View>("today");
   const [search, setSearch] = useState("");
-  const [toast, setToast] = useState<{
-    message: string;
-    variant: "success" | "error" | "info";
-  } | null>(null);
-
-  const showToast = useCallback(
-    (message: string, variant: "success" | "error" | "info" = "info") => {
-      setToast({ message, variant });
-    },
-    [],
-  );
-
-  const clearToast = useCallback(() => setToast(null), []);
 
   const addItemHighlight =
     "rounded-lg m-1 border border-accent/25 bg-accent-dim text-accent shadow-[0_0_0_1px_rgba(34,211,238,0.16)]";
@@ -143,13 +129,11 @@ export default function Dashboard({ initialProblems }: Props) {
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-      showToast("Failed to add", "error");
       return;
     }
     const p = await res.json();
     setProblems((prev) => [p, ...prev]);
     setView("today");
-    showToast("Added successfully", "success");
   }
 
   async function handleMark(id: string, idx: number) {
@@ -170,7 +154,6 @@ export default function Dashboard({ initialProblems }: Props) {
   async function handleDelete(id: string) {
     await fetch(`/api/problems/${id}`, { method: "DELETE" });
     setProblems((prev) => prev.filter((x) => x._id?.toString() !== id));
-    showToast("Deleted", "info");
   }
 
   // ── Derived data ──
@@ -522,13 +505,6 @@ export default function Dashboard({ initialProblems }: Props) {
           ))}
         </div>
       </nav>
-
-      {/* Toast */}
-      <Toast
-        message={toast?.message ?? null}
-        variant={toast?.variant}
-        onDismiss={clearToast}
-      />
     </div>
   );
 }

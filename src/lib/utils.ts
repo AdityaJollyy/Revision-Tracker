@@ -1,5 +1,4 @@
 import { INTERVALS } from "@/constants/tracker";
-import type { IProblem } from "@/models/Problem";
 
 export function today(): string {
   return new Date().toISOString().split("T")[0];
