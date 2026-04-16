@@ -116,6 +116,8 @@ export default function Dashboard({ initialProblems }: Props) {
   const [problems, setProblems] = useState<IProblem[]>(initialProblems);
   const [view, setView] = useState<View>("today");
   const [search, setSearch] = useState("");
+  const [pendingMarkKey, setPendingMarkKey] = useState<string | null>(null);
+  const [deletingProblemId, setDeletingProblemId] = useState<string | null>(null);
 
   const addItemHighlight =
     "rounded-lg m-1 border border-accent/25 bg-accent-dim text-accent shadow-[0_0_0_1px_rgba(34,211,238,0.16)]";
@@ -129,31 +131,54 @@ export default function Dashboard({ initialProblems }: Props) {
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-      return;
+      return false;
     }
     const p = await res.json();
     setProblems((prev) => [p, ...prev]);
     setView("today");
+    return true;
   }
 
   async function handleMark(id: string, idx: number) {
-    const p = problems.find((x) => x._id?.toString() === id)!;
+    const p = problems.find((x) => x._id?.toString() === id);
+    if (!p) return;
+
+    const pendingKey = `${id}:${idx}`;
     const completed = [...p.completed];
     completed[idx] = !completed[idx];
-    const res = await fetch(`/api/problems/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed }),
-    });
-    const updated = await res.json();
-    setProblems((prev) =>
-      prev.map((x) => (x._id?.toString() === id ? updated : x)),
-    );
+
+    setPendingMarkKey(pendingKey);
+    try {
+      const res = await fetch(`/api/problems/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed }),
+      });
+
+      if (!res.ok) {
+        return;
+      }
+
+      const updated = await res.json();
+      setProblems((prev) =>
+        prev.map((x) => (x._id?.toString() === id ? updated : x)),
+      );
+    } finally {
+      setPendingMarkKey(null);
+    }
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/problems/${id}`, { method: "DELETE" });
-    setProblems((prev) => prev.filter((x) => x._id?.toString() !== id));
+    setDeletingProblemId(id);
+    try {
+      const res = await fetch(`/api/problems/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        return;
+      }
+      setProblems((prev) => prev.filter((x) => x._id?.toString() !== id));
+    } finally {
+      setDeletingProblemId(null);
+    }
   }
 
   // ── Derived data ──
@@ -357,6 +382,7 @@ export default function Dashboard({ initialProblems }: Props) {
                     p={p}
                     onMark={handleMark}
                     mode="today"
+                    pendingMarkKey={pendingMarkKey}
                   />
                 ))}
               </div>
@@ -409,6 +435,7 @@ export default function Dashboard({ initialProblems }: Props) {
                     p={p}
                     onMark={handleMark}
                     mode="upcoming"
+                    pendingMarkKey={pendingMarkKey}
                   />
                 ))}
               </div>
@@ -473,6 +500,8 @@ export default function Dashboard({ initialProblems }: Props) {
                     p={p}
                     onMark={handleMark}
                     onDelete={handleDelete}
+                    pendingMarkKey={pendingMarkKey}
+                    deleting={deletingProblemId === p._id?.toString()}
                   />
                 ))}
               </div>

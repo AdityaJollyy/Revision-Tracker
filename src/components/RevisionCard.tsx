@@ -10,14 +10,21 @@ import {
 import { INTERVALS } from "@/constants/tracker";
 import type { IProblem } from "@/models/Problem";
 import Badge from "./Badge";
+import Spinner from "./Spinner";
 
 interface Props {
   p: IProblem;
   onMark: (id: string, idx: number) => void;
   mode: "today" | "upcoming";
+  pendingMarkKey?: string | null;
 }
 
-export default function RevisionCard({ p, onMark, mode }: Props) {
+export default function RevisionCard({
+  p,
+  onMark,
+  mode,
+  pendingMarkKey,
+}: Props) {
   const dates = getRevisionDates(p.solvedDate);
   const id = p._id?.toString() ?? "";
   const isConcept = p.entryType === "concept";
@@ -99,6 +106,7 @@ export default function RevisionCard({ p, onMark, mode }: Props) {
         <div className="flex flex-col gap-2">
           {displayRevisions.map(({ date, index, interval }) => {
             const overdue = isOverdue(date);
+            const isMarking = pendingMarkKey === `${id}:${index}`;
             return (
               <div
                 key={index}
@@ -123,13 +131,15 @@ export default function RevisionCard({ p, onMark, mode }: Props) {
                   </span>
                 </div>
                 <button
+                  disabled={isMarking}
                   onClick={() => onMark(id, index)}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all duration-200 ${
+                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 ${
                     overdue
                       ? "bg-danger/10 text-danger hover:bg-danger/20 border border-danger/30"
                       : "bg-accent/10 text-accent hover:bg-accent/20 border border-accent/30"
                   }`}
                 >
+                  {isMarking && <Spinner className="w-3 h-3" />}
                   Mark done
                 </button>
               </div>

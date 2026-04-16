@@ -5,6 +5,7 @@ import { today, addDays, formatDate } from "@/lib/utils";
 import { INTERVALS, TAGS, ENTRY_TYPES } from "@/constants/tracker";
 import type { EntryType, Tag } from "@/constants/tracker";
 import type { ProblemInput } from "@/models/Problem";
+import Spinner from "./Spinner";
 
 interface FormState {
   entryType: EntryType;
@@ -15,7 +16,7 @@ interface FormState {
 }
 
 interface Props {
-  onAdd: (data: ProblemInput) => Promise<void>;
+  onAdd: (data: ProblemInput) => Promise<boolean>;
 }
 
 const inputBase =
@@ -36,15 +37,24 @@ export default function AddProblemForm({ onAdd }: Props) {
   async function handleSubmit() {
     if (!form.name.trim()) return;
     setLoading(true);
-    await onAdd({ ...form, tag: form.entryType === "concept" ? "" : form.tag });
-    setForm({
-      entryType: "problem",
-      name: "",
-      tag: "Array",
-      solvedDate: today(),
-      link: "",
-    });
-    setLoading(false);
+    try {
+      const saved = await onAdd({
+        ...form,
+        tag: form.entryType === "concept" ? "" : form.tag,
+      });
+
+      if (saved) {
+        setForm({
+          entryType: "problem",
+          name: "",
+          tag: "Array",
+          solvedDate: today(),
+          link: "",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -162,8 +172,9 @@ export default function AddProblemForm({ onAdd }: Props) {
             type="button"
             onClick={handleSubmit}
             disabled={loading || !form.name.trim()}
-            className="w-full py-3 bg-accent text-text-inverse font-semibold text-sm rounded-lg hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+            className="w-full py-3 bg-accent text-text-inverse font-semibold text-sm rounded-lg hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer inline-flex items-center justify-center gap-2"
           >
+            {loading && <Spinner className="w-4 h-4 text-text-inverse" />}
             {loading
               ? "Adding…"
               : `Add ${form.entryType === "concept" ? "concept" : "problem"}`}
